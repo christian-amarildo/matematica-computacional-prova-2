@@ -1,0 +1,160 @@
+import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+
+# Função para calcular as diferenças divididas
+def divided_differences(x_points, y_points):
+    n = len(x_points)
+    diff_table = np.zeros((n, n))
+    diff_table[:, 0] = y_points  # Primeira coluna é y_points
+
+    for j in range(1, n):
+        for i in range(n - j):
+            diff_table[i, j] = (diff_table[i + 1, j - 1] - diff_table[i, j - 1]) / (x_points[i + j] - x_points[i])
+
+    return diff_table
+
+# Função para calcular o polinômio de Newton
+def newton_interpolation(x_points, y_points, x_vals):
+    n = len(x_points)
+    diff_table = divided_differences(x_points, y_points)
+    n_vals = len(x_vals)
+    y_vals = np.zeros(n_vals)
+
+    for i in range(n_vals):
+        result = y_points[0]
+        product_term = 1
+        for j in range(1, n):
+            product_term *= (x_vals[i] - x_points[j - 1])
+            result += diff_table[0, j] * product_term
+        y_vals[i] = result
+
+    return y_vals
+
+# Função para calcular a derivada do polinômio de Newton
+def derivative_newton(x_points, y_points, x_vals):
+    n = len(x_points)
+    diff_table = divided_differences(x_points, y_points)
+    x = sp.symbols('x')
+    poly = 0
+
+    for i in range(n):
+        term = diff_table[0, i]
+        for j in range(i):
+            term *= (x - x_points[j])
+        poly += term
+
+    # Derivar o polinômio
+    derivative = sp.diff(poly, x)
+
+    # Avaliar a derivada nos pontos fornecidos
+    derivative_vals = [derivative.subs(x, val) for val in x_vals]
+    return derivative_vals
+
+# Função para calcular a integral do polinômio de Newton
+def integral_newton(x_points, y_points, a, b):
+    n = len(x_points)
+    diff_table = divided_differences(x_points, y_points)
+    x = sp.symbols('x')
+    poly = 0
+
+    for i in range(n):
+        term = diff_table[0, i]
+        for j in range(i):
+            term *= (x - x_points[j])
+        poly += term
+
+    # Integrar o polinômio
+    integral = sp.integrate(poly, (x, a, b))
+    return integral
+
+# Função para realizar a interpolação inversa
+def inverse_interpolation(x_points, y_points, y_val):
+    # Aqui, precisamos resolver o polinômio para encontrar x tal que f(x) = y_val
+    # Vamos usar o método de interpolação para encontrar a função inversa.
+    n = len(x_points)
+    diff_table = divided_differences(x_points, y_points)
+    x = sp.symbols('x')
+    poly = 0
+
+    for i in range(n):
+        term = diff_table[0, i]
+        for j in range(i):
+            term *= (x - x_points[j])
+        poly += term
+
+    # Resolver f(x) = y_val para x
+    equation = poly - y_val
+    solutions = sp.solve(equation, x)
+    
+    # Filtrar soluções reais
+    real_solutions = [sol.evalf() for sol in solutions if sol.is_real]
+    return real_solutions
+
+# Função principal que executa a interpolação e outras operações
+def main():
+    try:
+        # Solicitar a entrada dos pontos ao usuário
+        n_points = int(input("Quantos pontos você quer fornecer para a interpolação? "))
+        x_points = []
+        y_points = []
+
+        for i in range(n_points):
+            x_i = float(input(f"Informe o valor x{i}: "))
+            y_i = float(input(f"Informe o valor y{i} (f(x{i})): "))
+            x_points.append(x_i)
+            y_points.append(y_i)
+
+        # Solicitar ao usuário qual operação ele deseja realizar
+        print("\nEscolha a operação que você deseja realizar com a interpolação:")
+        print("1. Interpolação (Newton)")
+        print("2. Derivada do polinômio interpolador")
+        print("3. Integral do polinômio interpolador")
+        print("4. Interpolação Inversa")
+        operation = int(input("Escolha uma operação (1/2/3/4): "))
+
+        # Calcular a interpolação ou operação solicitada
+        if operation == 1:
+            x_vals = np.linspace(min(x_points), max(x_points), 100)  # Intervalo para plotagem
+            y_vals = newton_interpolation(x_points, y_points, x_vals)
+            
+            # Plotar a interpolação
+            plt.plot(x_vals, y_vals, label="Polinômio Interpolador")
+            plt.scatter(x_points, y_points, color='red', label="Pontos dados")
+            plt.legend()
+            plt.title("Interpolação Polinomial de Newton")
+            plt.xlabel("x")
+            plt.ylabel("f(x)")
+            plt.grid(True)
+            plt.show()
+
+        elif operation == 2:
+            x_vals = [float(input("Informe o valor de x para calcular a derivada: "))]
+            derivative_vals = derivative_newton(x_points, y_points, x_vals)
+            print(f"A derivada do polinômio nos pontos fornecidos é: {derivative_vals}")
+
+        elif operation == 3:
+            a = float(input("Informe o limite inferior da integral: "))
+            b = float(input("Informe o limite superior da integral: "))
+            integral_value = integral_newton(x_points, y_points, a, b)
+            print(f"A integral do polinômio interpolador no intervalo [{a}, {b}] é: {integral_value}")
+
+        elif operation == 4:
+            y_val = float(input("Informe o valor de f(x) para encontrar x (Interpolação Inversa): "))
+            solutions = inverse_interpolation(x_points, y_points, y_val)
+            if solutions:
+                print(f"As soluções para f(x) = {y_val} são: {solutions}")
+            else:
+                print("Não foi possível encontrar soluções para a interpolação inversa.")
+
+        else:
+            print("Operação inválida. Saindo...")
+            return
+
+    except Exception as e:
+        print(f"Ocorreu um erro durante o processo: {e}")
+        print("Tentando novamente...")
+        main()
+
+if __name__ == "__main__":
+    main()
