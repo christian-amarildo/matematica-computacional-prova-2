@@ -1,0 +1,118 @@
+import numpy as np
+import sympy as sp
+import matplotlib.pyplot as plt
+
+# Função para calcular o polinômio interpolador de Lagrange
+def lagrange_interpolation(x_points, y_points, x_vals):
+    n = len(x_points)
+    y_vals = np.zeros(len(x_vals))
+
+    for i, x in enumerate(x_vals):
+        L = 0
+        for j in range(n):
+            lj = 1
+            for k in range(n):
+                if k != j:
+                    lj *= (x - x_points[k]) / (x_points[j] - x_points[k])
+            L += y_points[j] * lj
+        y_vals[i] = L
+
+    return y_vals
+
+# Função para calcular a derivada de um polinômio dado um conjunto de pontos
+def derivative_lagrange(x_points, y_points, x_vals):
+    # Obter o polinômio interpolador usando Lagrange
+    n = len(x_points)
+    poly = 0
+    x = sp.symbols('x')
+
+    for j in range(n):
+        lj = 1
+        for k in range(n):
+            if k != j:
+                lj *= (x - x_points[k]) / (x_points[j] - x_points[k])
+        poly += y_points[j] * lj
+
+    # Derivar o polinômio
+    derivative = sp.diff(poly, x)
+    
+    # Avaliar a derivada nos pontos fornecidos
+    derivative_vals = [derivative.subs(x, val) for val in x_vals]
+    return derivative_vals
+
+# Função para calcular a integral do polinômio interpolador
+def integral_lagrange(x_points, y_points, a, b):
+    # Obter o polinômio interpolador usando Lagrange
+    n = len(x_points)
+    poly = 0
+    x = sp.symbols('x')
+
+    for j in range(n):
+        lj = 1
+        for k in range(n):
+            if k != j:
+                lj *= (x - x_points[k]) / (x_points[j] - x_points[k])
+        poly += y_points[j] * lj
+
+    # Integrar o polinômio
+    integral = sp.integrate(poly, (x, a, b))
+    return integral
+
+# Função principal que executa a interpolação e outras operações
+def main():
+    # Solicitar a entrada dos pontos ao usuário
+    try:
+        n_points = int(input("Quantos pontos você quer fornecer para a interpolação? "))
+        x_points = []
+        y_points = []
+
+        for i in range(n_points):
+            x_i = float(input(f"Informe o valor x{i}: "))
+            y_i = float(input(f"Informe o valor y{i} (f(x{i})): "))
+            x_points.append(x_i)
+            y_points.append(y_i)
+
+        # Solicitar ao usuário qual operação ele deseja realizar
+        print("\nEscolha a operação que você deseja realizar com a interpolação:")
+        print("1. Interpolação (Lagrange)")
+        print("2. Derivada do polinômio interpolador")
+        print("3. Integral do polinômio interpolador")
+        operation = int(input("Escolha uma operação (1/2/3): "))
+
+        # Calcular a interpolação ou operação solicitada
+        if operation == 1:
+            x_vals = np.linspace(min(x_points), max(x_points), 100)  # Intervalo para plotagem
+            y_vals = lagrange_interpolation(x_points, y_points, x_vals)
+            
+            # Plotar a interpolação
+            plt.plot(x_vals, y_vals, label="Polinômio Interpolador")
+            plt.scatter(x_points, y_points, color='red', label="Pontos dados")
+            plt.legend()
+            plt.title("Interpolação Polinomial de Lagrange")
+            plt.xlabel("x")
+            plt.ylabel("f(x)")
+            plt.grid(True)
+            plt.show()
+        
+        elif operation == 2:
+            x_vals = [float(input("Informe o valor de x para calcular a derivada: "))]
+            derivative_vals = derivative_lagrange(x_points, y_points, x_vals)
+            print(f"A derivada do polinômio nos pontos fornecidos é: {derivative_vals}")
+        
+        elif operation == 3:
+            a = float(input("Informe o limite inferior da integral: "))
+            b = float(input("Informe o limite superior da integral: "))
+            integral_value = integral_lagrange(x_points, y_points, a, b)
+            print(f"A integral do polinômio interpolador no intervalo [{a}, {b}] é: {integral_value}")
+
+        else:
+            print("Operação inválida. Saindo...")
+            return
+
+    except Exception as e:
+        print(f"Ocorreu um erro durante o processo: {e}")
+        print("Tentando novamente...")
+        main()
+
+if __name__ == "__main__":
+    main()
