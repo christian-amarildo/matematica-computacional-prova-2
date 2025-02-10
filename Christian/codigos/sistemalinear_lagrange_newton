@@ -1,0 +1,147 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def metodo_lagrange(x, y, valor):
+    """
+    Interpolação de Lagrange para um valor dado.
+    
+    :param x: Lista de pontos x (valores independentes).
+    :param y: Lista de valores de f(x) (valores dependentes).
+    :param valor: Valor de x para o qual calcular a interpolação.
+    :return: Valor interpolado.
+    """
+    n = len(x)
+    resultado = 0.0
+    for i in range(n):
+        termo = y[i]
+        for j in range(n):
+            if j != i:
+                termo *= (valor - x[j]) / (x[i] - x[j])
+        resultado += termo
+    return resultado
+
+def metodo_newton(x, y, valor):
+    """
+    Interpolação de Newton utilizando a tabela de diferenças divididas.
+    
+    :param x: Lista de pontos x (valores independentes).
+    :param y: Lista de valores de f(x) (valores dependentes).
+    :param valor: Valor de x para o qual calcular a interpolação.
+    :return: Valor interpolado.
+    """
+    n = len(x)
+    tabela = np.zeros((n, n))
+    tabela[:, 0] = y  # Primeira coluna é a lista de valores y.
+
+    # Calculando as diferenças divididas
+    for j in range(1, n):
+        for i in range(n - j):
+            tabela[i, j] = (tabela[i + 1, j - 1] - tabela[i, j - 1]) / (x[i + j] - x[i])
+
+    # Usando a tabela de diferenças divididas para interpolar
+    resultado = tabela[0, 0]
+    produto = 1
+    for i in range(1, n):
+        produto *= (valor - x[i - 1])
+        resultado += tabela[0, i] * produto
+    return resultado
+
+def resolver_sistema_linear(A, b):
+    """
+    Resolva o sistema linear Ax = b usando numpy.linalg.solve.
+    
+    :param A: Matriz de coeficientes (matriz quadrada).
+    :param b: Vetor do lado direito do sistema.
+    :return: Solução do sistema linear.
+    """
+    try:
+        x = np.linalg.solve(A, b)
+        return x
+    except np.linalg.LinAlgError:
+        print("Erro ao resolver o sistema linear: sistema singular ou mal condicionado.")
+        return None
+
+def obter_entrada():
+    """
+    Função para obter a entrada do usuário para os pontos de interpolação ou sistema linear.
+    """
+    try:
+        escolha = input("Escolha o tipo de problema (1 para Interpolação, 2 para Sistema Linear): ").strip()
+        if escolha == '1':
+            metodo = input("Escolha o método de interpolação (1 para Lagrange, 2 para Newton): ").strip()
+            n = int(input("Digite o número de pontos de interpolação: "))
+            x = []
+            y = []
+            for i in range(n):
+                xi = float(input(f"Digite o valor x{i + 1}: "))
+                yi = float(input(f"Digite o valor y{i + 1}: "))
+                x.append(xi)
+                y.append(yi)
+            valor_interpolacao = float(input("Digite o valor de x para interpolação: "))
+            return (metodo, x, y, valor_interpolacao)
+        
+        elif escolha == '2':
+            n = int(input("Digite o número de variáveis (ordem da matriz A): "))
+            A = []
+            for i in range(n):
+                linha = list(map(float, input(f"Digite a linha {i + 1} da matriz A (valores separados por espaço): ").split()))
+                A.append(linha)
+            b = list(map(float, input("Digite o vetor b (valores separados por espaço): ").split()))
+            return ('sistema', A, b)
+        
+        else:
+            print("Opção inválida.")
+            return None
+
+    except ValueError as ve:
+        print(f"Erro na entrada de dados: {ve}")
+        return None
+
+def tentar_solucao():
+    """
+    Função que tenta calcular a solução usando o método especificado e trata erros.
+    """
+    dados_entrada = obter_entrada()
+    if dados_entrada is None:
+        print("Tentativa falhou. Por favor, tente novamente com valores válidos.")
+        return
+    
+    if dados_entrada[0] == 'sistema':
+        A, b = dados_entrada[1], dados_entrada[2]
+        solucao = resolver_sistema_linear(np.array(A), np.array(b))
+        if solucao is not None:
+            print("Solução do sistema linear:")
+            for i, val in enumerate(solucao):
+                print(f"x{i+1} = {val}")
+        else:
+            print("Não foi possível resolver o sistema linear.")
+
+    elif dados_entrada[0] == '1':
+        metodo, x, y, valor_interpolacao = dados_entrada[1], dados_entrada[2], dados_entrada[3], dados_entrada[4]
+        
+        if metodo == '1':  # Interpolação de Lagrange
+            resultado = metodo_lagrange(x, y, valor_interpolacao)
+            print(f"O valor interpolado para x = {valor_interpolacao} é: {resultado}")
+        
+        elif metodo == '2':  # Interpolação de Newton
+            resultado = metodo_newton(x, y, valor_interpolacao)
+            print(f"O valor interpolado para x = {valor_interpolacao} é: {resultado}")
+        
+        else:
+            print("Método de interpolação inválido.")
+
+# Tentativas automáticas com limite de tentativas
+tentativas_maximas = 5
+tentativas = 0
+
+while tentativas < tentativas_maximas:
+    print(f"\nTentativa {tentativas + 1} de {tentativas_maximas}...")
+    tentar_solucao()
+    tentativas += 1
+    resposta = input("Deseja tentar novamente? (s/n): ")
+    if resposta.lower() != 's':
+        print("Saindo...")
+        break
+
+if tentativas == tentativas_maximas:
+    print("Limite de tentativas atingido. Não foi possível resolver o problema com esse método.")
