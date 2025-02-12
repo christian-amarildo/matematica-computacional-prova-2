@@ -83,7 +83,10 @@ if __name__ == "__main__":
     # Dados de exemplo
     x_dados = [0, 1, 2, 3, 4, 5]
     y_dados = [2.1, 7.8, 13.5, 27.2, 40.9, 61.1]
-    
+
+    # x_dados = [-1, -0.75, -0.6, -0.5, -0.3, 0, 0.2, 0.4, -0.5,0.7,1]
+    # y_dados = [2.05, 1.153, 0.45, 0.4, 0.5, 0, 0.2, 0.6, 0.512, 1.2, 2.05]
+
     try:
         # Ajuste de polinômio de grau 2
         coeficientes, mse = ajuste_minimos_quadrados(x_dados, y_dados, 2)
